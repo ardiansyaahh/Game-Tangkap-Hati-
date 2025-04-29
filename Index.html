@@ -1,0 +1,259 @@
+<!DOCTYPE html><html lang="id"><head>  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Hati Ardi 😹</title>
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fff0f5;
+      overflow: hidden;
+    }
+    #intro, #ending {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      background: #fff0f5;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    #intro h1 {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+      color: #d63384;
+    }
+    #intro p {
+      margin: 0.3rem 0;
+      font-size: 1.1rem;
+      max-width: 500px;
+    }
+    #startBtn {
+      padding: 0.8rem 1.5rem;
+      margin-top: 1.5rem;
+      background: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    #gameCanvas {
+      display: none;
+      position: relative;
+      width: 100vw;
+      height: 70vh;
+      background: #ffe4e1;
+      overflow: hidden;
+    }
+    #basket {
+      position: absolute;
+      bottom: 10px;
+      font-size: 3rem;
+      transition: left 0.1s;
+    }
+    .heart {
+      position: absolute;
+      font-size: 2rem;
+    }
+    #statusText {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+      max-width: 80%;
+    }
+    .end-buttons {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .end-buttons button {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #teleBtn {
+      background-color: #229ED9;
+      color: white;
+    }
+    #igBtn {
+      background-color: #C13584;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="intro">
+    <h1>Game Hati Ardi</h1>
+    <p><strong>Dibuat sama Ardi</strong>. Santai aja, tapi siapa tahu berkesan.</p>
+    <p><em>Tugas kamu:</em> tangkap ♥️ sebanyak 7x ya weee~</p>
+    <p>Jangan sampai salah tangkap kalau gamau diroasting 😹</p>
+    <button id="startBtn">Gaskeun!</button>
+  </div>
+  <div id="gameCanvas">
+    <div id="statusText"></div>
+    <div id="basket">🧺</div>
+  </div>
+  <div id="ending" style="display:none">
+    <h2>Njayyy kamu berhasil tangkap semua ♥️ Ardi!</h2>
+    <p><strong>Pilih salah satu tombol di bawah ini tapi yaaa...</strong></p>
+    <div class="end-buttons">
+      <button id="teleBtn">Lanjut ke Tele</button>
+      <button id="igBtn">Follow IG</button>
+    </div>
+  </div>
+  <script>
+    const benarTexts = [
+      "Satu ♥️ masuk nih! Gass~ (1/7)",
+      "Dua ♥️ dapet cuy! (2/7)",
+      "Tiga ♥️ nah ayo² tambah lagi! (3/7)",
+      "Empat ♥️, makin jago sih km~ (4/7)",
+      "Lima ♥️? aku deg²an njirr (5/7)",
+      "Enam ♥️! Dikit lagiii! (6/7)",
+      "Tujuh ♥️ Mantap² dah dapat semua!"
+    ];const salahTexts = {
+  '🗿': [
+    "Njirr, itu batu cok bukan ♥️",
+    "🗿? SERIUSSS? Emang mau koleksi monumen?",
+    "Udah tau bukan ♥️, masih km tangkep juga..."
+  ],
+  '👿': [
+    "Anjay, yang km tangkep malah iblis 😹~",
+    "Wkwkwk itu 👿 woi, Ardi gak toxic!",
+    "km pengen main ama setan apa gimana?"
+  ]
+};
+
+const gameCanvas = document.getElementById("gameCanvas");
+const intro = document.getElementById("intro");
+const basket = document.getElementById("basket");
+const statusText = document.getElementById("statusText");
+const startBtn = document.getElementById("startBtn");
+const ending = document.getElementById("ending");
+const teleBtn = document.getElementById("teleBtn");
+const igBtn = document.getElementById("igBtn");
+
+let caught = 0;
+let screenWidth = window.innerWidth;
+const basketWidth = 80;
+basket.style.left = screenWidth / 2 - basketWidth / 2 + "px";
+
+let characters = ["♥️", "🗿", "👿"];
+let activeFalling = 0;
+
+document.addEventListener("touchmove", (e) => {
+  let touchX = e.touches[0].clientX;
+  basket.style.left = Math.min(screenWidth - basketWidth, Math.max(0, touchX - basketWidth / 2)) + "px";
+});
+
+startBtn.onclick = () => {
+  intro.style.display = "none";
+  gameCanvas.style.display = "block";
+  gameLoop();
+};
+
+function gameLoop() {
+  if (caught >= 7) return;
+  let jumlahKarakter = Math.floor(Math.random() * 3) + 1; // 1 - 3
+  let dipilih = [];
+  for (let i = 0; i < jumlahKarakter; i++) {
+    let simbol = characters[Math.floor(Math.random() * characters.length)];
+    dipilih.push(simbol);
+  }
+  dipilih.forEach(spawnCharacter);
+  setTimeout(gameLoop, 1500);
+}
+
+function spawnCharacter(char) {
+  const el = document.createElement("div");
+  el.classList.add("heart");
+  el.innerHTML = char;
+  el.style.left = Math.random() * (screenWidth - 30) + "px";
+  el.style.top = "0px";
+  gameCanvas.appendChild(el);
+
+  let dirX = (Math.random() - 0.5) * 4;
+  let fall = setInterval(() => {
+    let top = parseInt(el.style.top);
+    let left = parseInt(el.style.left);
+    top += 6;
+    left += dirX;
+    el.style.top = top + "px";
+    el.style.left = Math.min(screenWidth - 30, Math.max(0, left)) + "px";
+
+    let basketLeft = parseInt(basket.style.left);
+    if (top > window.innerHeight * 0.6) {
+      if (left > basketLeft - 20 && left < basketLeft + 80) {
+        if (char === "♥️") {
+          statusText.style.color = "green";
+          statusText.innerHTML = benarTexts[caught];
+          caught++;
+          if (caught >= 7) return endGame();
+        } else {
+          let sindir = salahTexts[char];
+          statusText.style.color = "red";
+          statusText.innerHTML = sindir[Math.floor(Math.random() * sindir.length)];
+        }
+      } else {
+        // ga kena = ga usah kasih teks
+      }
+      gameCanvas.removeChild(el);
+      clearInterval(fall);
+    }
+  }, 20);
+}
+
+function endGame() {
+  gameCanvas.style.display = "none";
+  ending.style.display = "flex";
+}
+
+let teleClick = 0;
+let igClick = 0;
+
+const teleTexts = [
+  "Ngapain sii di tele~",
+  "Udah lah IG aja",
+  "kenapsi ngeyel amat 😑?",
+  "Aku udah nunggu di IG !",
+  "bang udah bangg IG aja kubilang ~"
+];
+
+teleBtn.onclick = () => {
+  teleBtn.style.position = "absolute";
+  teleBtn.style.top = Math.random() * 60 + 20 + "%";
+  teleBtn.style.left = Math.random() * 60 + 20 + "%";
+  teleBtn.innerText = teleTexts[teleClick++ % teleTexts.length];
+};
+
+igBtn.onclick = () => {
+  if (igClick < 1) {
+    igBtn.style.position = "absolute";
+    igBtn.style.top = Math.random() * 60 + 20 + "%";
+    igBtn.style.left = Math.random() * 60 + 20 + "%";
+    igBtn.innerText = "eh sabarr, follow aja nanti aku fllbck~";
+    igClick++;
+  } else {
+    window.location.href = "https://instagram.com/_Ardiansyaah15";
+  }
+};
+
+  </script>
+</body>
+</html>
